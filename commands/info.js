@@ -16,8 +16,8 @@ module.exports = {
 
         // Calculate account age
         const accountAge = new Date() - user.createdAt;
-        const daysSinceCreation = Math.floor(accountAge / (1000 * 60 * 60 * 24));
-        const yearsSinceCreation = Math.floor(daysSinceCreation / 365)
+        const daysSinceCreation = accountAge / (1000 * 60 * 60 * 24);
+        const yearsSinceCreation = (daysSinceCreation / 365).toFixed(1);
 
         await interaction.reply(`Name: ${user.username}\nAccount Age: ${yearsSinceCreation} years`);
     },

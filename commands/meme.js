@@ -1,99 +1,62 @@
 const axios = require('axios');
-const dotenv = require('dotenv');
-dotenv.config({ path: '../.env' });
-const { EmbedBuilder } = require('discord.js');
+const Filter = require('bad-words');
+const { EmbedBuilder } = require('discord.js'); // Changed from EmbedBuilder to MessageEmbed
+
+const filter = new Filter();
+
+async function getRandomMeme(apiUrl = 'https://www.reddit.com/r/meme.json') {
+    try {
+        const response = await axios.get(apiUrl, {
+            headers: {
+                'User-agent': 'Mozilla/5.0'
+            }
+        });
+
+        const data = response.data;
+        if (data && data.data && data.data.children && data.data.children.length > 0) {
+            const randomIndex = Math.floor(Math.random() * data.data.children.length);
+            const randomMeme = data.data.children[randomIndex].data;
+
+            const title = filter.clean(randomMeme.title); // Filter out bad words from the title
+            const imageUrl = randomMeme.url;
+
+            return { title, imageUrl };
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error(`Error fetching meme: ${error.message}`);
+        return null;
+    }
+}
 
 module.exports = {
-  data: {
-    name: 'meme',
-    description: 'Generate a Meme!',
-    options: [
-      {
-        name: 'buttons',
-        description: 'Generate a meme with buttons',
-        type: 1,
-        options: [
-          {
-            name: 'first-button',
-            description: 'Give something to put',
-            type: 3, // STRING type
-            required: true,
-          },
-          {
-            name: 'second-button',
-            description: 'Give something to put',
-            type: 3, // STRING type
-            required: true,
-          },
-        ],
-      },
-      {
-        name: 'cat',
-        description: 'Generate a meme with a cat',
-        type: 1,
-        options: [
-          {
-            name: 'first-text',
-            description: 'What the woman says',
-            type: 3, // STRING type
-            required: true,
-          },
-          {
-            name: 'second-text',
-            description: 'what the cat says',
-            type: 3, // STRING type
-            required: true,
-          },
-        ],
-      },
-    ],
-  },
-  async execute(interaction) {
-    const subcommand = interaction.options.getSubcommand();
+    data: {
+        name: 'meme',
+        description: 'Get a random meme!',
+    },
+    async execute(interaction) {
+        try {
+            // Acknowledge the interaction to avoid "Unknown interaction" error
+            await interaction.deferReply();
 
-    const username = process.env.imgname;
-    const password = process.env.imgpswd;
-    const apiUrl = 'https://api.imgflip.com/caption_image';
-    let templateId, text0, text1;
+            // Call the getRandomMeme function to get a random meme
+            const randomMeme = await getRandomMeme();
 
-    if (subcommand === 'buttons') {
-      templateId = '87743020';
-      text0 = interaction.options.getString('first-button').substring(0, 35);
-      text1 = interaction.options.getString('second-button').substring(0, 35);
-    } else if (subcommand === 'cat') {
-      templateId = '188390779';
-      text0 = interaction.options.getString('first-text').substring(0, 35);
-      text1 = interaction.options.getString('second-text').substring(0, 35);
-    } else {
-      interaction.reply('Invalid subcommand.');
-      return;
-    }
+            if (randomMeme) {
+                // If a random meme is fetched, create an embed and reply with it
+                const memeEmbed = new EmbedBuilder()
+                    .setColor(0xb3baca)
+                    .setTitle(randomMeme.title)
+                    .setImage(randomMeme.imageUrl);
 
-    const params = {
-      template_id: templateId,
-      username: username,
-      password: password,
-      text0: text0,
-      text1: text1,
-    };
-
-    try {
-      const response = await axios.post(apiUrl, null, { params });
-      const data = response.data;
-
-      if (data.success) {
-        const memeUrl = data.data.url;
-
-        const exampleEmbed = new EmbedBuilder()
-          .setColor(0xcc2458)
-          .setImage(memeUrl);
-
-        interaction.reply({ embeds: [exampleEmbed] });
-      } else {
-        interaction.reply(`Error: ${data.error_message}`);
-      }
-    } catch (error) {
-      interaction.reply('Error making API request: ' + error.message);
-    }
-  },
+                await interaction.editReply({ embeds: [memeEmbed] });
+            } else {
+                // If unable to fetch a random meme, reply with an error message
+                await interaction.editReply('Unable to fetch a random meme.');
+            }
+        } catch (error) {
+            console.error(`Error handling interaction: ${error.message}`);
+        }
+    },
 };

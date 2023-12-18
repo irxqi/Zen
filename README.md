@@ -70,8 +70,5 @@ Feel free to contribute by adding more commands, fixing bugs, or improving exist
 ## Support
 If you encounter any issues or have questions, feel free to open an issue on the [GitHub repository](https://github.com/your-username/your-bot-repo/issues).
 
-## Acknowledgments
-Special thanks to [contributors](https://github.com/your-username/your-bot-repo/graphs/contributors) who have helped improve this bot.
-
 ## Disclaimer
 This bot is provided as-is, without any warranty. Use it responsibly and in accordance with Discord's [Terms of Service](https://discord.com/terms).
